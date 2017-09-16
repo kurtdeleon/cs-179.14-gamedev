@@ -67,7 +67,7 @@ int main( void ){
 	window.create(sf::VideoMode(WINDOW_W, WINDOW_H), "Vectors & Circles", sf::Style::Default, settings);
 	window.setFramerateLimit(FPS);
 	window.setKeyRepeatEnabled(false);
-	window.setActive(false); //deactivate main's openGL
+	window.setActive(false);
 	srand(time(NULL));
 	int curr = 0;
 	
