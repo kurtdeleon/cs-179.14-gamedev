@@ -35,7 +35,9 @@ void moveAll(){
 		double x2 = sf::Mouse::getPosition(window).x - rArray[0].getPosition().x;
 		double y2 = sf::Mouse::getPosition(window).y - rArray[0].getPosition().y;
 		double dist = sqrt((x2*x2) + (y2*y2));
-		rArray[0].move(x2/dist * 1.38889, y2/dist * 1.38889);
+		if (dist > 1){
+			rArray[0].move(x2/dist * 1.38889, y2/dist * 1.38889);
+		}
 	}
 	for (int i = 1; i < CIRCLES; i++){
 		cArray[i].move(0,0.13889); //speed is frames wanted / FPS
