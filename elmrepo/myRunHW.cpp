@@ -2,13 +2,13 @@
 #include <iostream>
 #include <math.h>
 
-#define SLEEPMILLI 1000.0f / 144.0f
-#define TIMESTEP SLEEPMILLI / 1000.0f
-#define FORCE 5000.0f * TIMESTEP
-#define MASS 100.0f
-#define WIDTH 1366
-#define HEIGHT 768
-#define RADIUS 30.0f
+#define SLEEPMILLI 1000.0f / 144.0f //sort of FPS
+#define TIMESTEP SLEEPMILLI / 1000.0f //based on slides
+#define FORCE 5000.0f * TIMESTEP //slides have 10000.0f
+#define MASS 100.0f //can be changed
+#define WIDTH 1366 //can be changed
+#define HEIGHT 768 //can be changed
+#define RADIUS 30.0f //can be changed
 
 using namespace std;
 using namespace sf;
@@ -16,7 +16,7 @@ using namespace sf;
 RenderWindow window;
 CircleShape circle;
 Vector2f velocity, acceleration;
-float friction = 0.2f, getTime = TIMESTEP;
+float friction = 0.2f, getTime = TIMESTEP; //getting time of the frame
 bool withFriction = false;
 
 void bounceCheck(){
@@ -25,8 +25,8 @@ void bounceCheck(){
 }
 
 void updateVelocity(){
-	velocity = velocity + (acceleration * getTime);
-	if(withFriction) velocity = velocity - ((friction * velocity) / MASS);
+	velocity = velocity + (acceleration * getTime); // v = v0 + (a*t)
+	if(withFriction) velocity = velocity - ((friction * velocity) / MASS); // v = v0 - ((f*v0) / m)
 }
 
 void moveCircle(){circle.move(velocity);}
@@ -50,7 +50,7 @@ int main(){
 	window.setActive(false);
 	circle.setRadius(RADIUS);
 	circle.setFillColor(Color::Magenta);
-	circle.setPosition(690, 690);
+	circle.setPosition(WIDTH/2, HEIGHT/2);
 	Thread thread(&renderThread, &window);
 	thread.launch();
 	while(window.isOpen()){
