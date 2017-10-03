@@ -2,37 +2,68 @@
 #include <iostream>
 #include <math.h>
 
-#define SLEEPMILLI 1000.0f / 144.0f //sort of FPS
-#define TIMESTEP SLEEPMILLI / 1000.0f //based on slides
-#define FORCE 5000.0f * TIMESTEP //slides have 10000.0f
-#define MASS 100.0f //can be changed
-#define WIDTH 1366 //can be changed
-#define HEIGHT 768 //can be changed
-#define RADIUS 30.0f //can be changed
+#define FPS 60
+#define TIMESTEP 1.0f / 60.0f //definition of timestep according to sir
+#define FORCE 160.0f //force according to sir
+#define MASS 1.0f //mass according to sir
+#define WIDTH 800
+#define HEIGHT 600
+#define RADIUS 30.0f
+#define ELASTICITY 1.0f 
+#define FRICTION 0.2f * TIMESTEP //friction according to sir
 
 using namespace std;
 using namespace sf;
 
 RenderWindow window;
 CircleShape circle;
-Vector2f velocity, acceleration;
-float friction = 0.2f, getTime = TIMESTEP; //getting time of the frame
+Vector2f velocity, acceleration, position;
 bool withFriction = false;
 
+Vector2f normalize(Vector2f vector){//basically how to normalize
+	float length = sqrt((vector.x * vector.x) + (vector.y * vector.y)); //getting magnitude of the vector
+	if(length != 0){
+		return Vector2f(vector.x / length, vector.y / length);
+	}else{
+		return vector;
+	}
+}
+
 void bounceCheck(){
-	if(circle.getPosition().y + (RADIUS * 2) > HEIGHT - 1 || circle.getPosition().y < 0) velocity.y = -1.0f * velocity.y;
-	if(circle.getPosition().x + (RADIUS * 2) > WIDTH - 1 || circle.getPosition().x < 0) velocity.x = -1.0f * velocity.x;
+	float cx = circle.getPosition().x, cy = circle.getPosition().y;
+	if(cy + RADIUS > HEIGHT - 1) {
+		velocity.y = -ELASTICITY * velocity.y;
+		circle.setPosition(cx, HEIGHT - RADIUS);
+	}
+	if(cy - RADIUS < 0){
+		velocity.y = -ELASTICITY * velocity.y;
+		circle.setPosition(cx, RADIUS);
+	}
+	if(cx + RADIUS > WIDTH - 1){
+		velocity.x = -ELASTICITY * velocity.x;
+		circle.setPosition(WIDTH - RADIUS, cy);
+	}
+	if(cx - RADIUS < 0){
+		velocity.x = -ELASTICITY * velocity.x;
+		circle.setPosition(RADIUS, cy);
+	}
 }
 
 void updateVelocity(){
-	velocity = velocity + (acceleration * getTime); // v = v0 + (a*t)
-	if(withFriction) velocity = velocity - ((friction * velocity) / MASS); // v = v0 - ((f*v0) / m)
+	position = position + (0.5f * acceleration * TIMESTEP * TIMESTEP) + (velocity * TIMESTEP) + position;
+	velocity = velocity + (acceleration * TIMESTEP);
+	if(withFriction) velocity -= (FRICTION * velocity * MASS);
 }
 
-void moveCircle(){circle.move(velocity);}
+void moveCircle(){
+	circle.move(velocity);
+}
 
 void renderThread(RenderWindow* window){
 	while(window->isOpen()){
+		normalize(position); //normalizing is important lol
+		normalize(velocity); //normalizing is important lol
+		normalize(acceleration); //normalizing is important lol
 		bounceCheck();
 		updateVelocity();
 		moveCircle();
@@ -42,13 +73,16 @@ void renderThread(RenderWindow* window){
 	}
 }
 
+
 int main(){
 	ContextSettings settings;
 	settings.antialiasingLevel = 8;
 	window.create(VideoMode(WIDTH, HEIGHT), "Circle Physics", Style::Default, settings);
+	window.setFramerateLimit(FPS);
 	window.setKeyRepeatEnabled(false);
 	window.setActive(false);
 	circle.setRadius(RADIUS);
+	circle.setOrigin(RADIUS, RADIUS); //important in terms of collision
 	circle.setFillColor(Color::Magenta);
 	circle.setPosition(WIDTH/2, HEIGHT/2);
 	Thread thread(&renderThread, &window);
@@ -63,16 +97,16 @@ int main(){
 				case Event::KeyPressed:
 				switch(event.key.code){
 					case Keyboard::W:
-					acceleration.y = -FORCE/MASS;
+					acceleration.y += -(FORCE * MASS);
 					break;
 					case Keyboard::A:
-					acceleration.x = -FORCE/MASS;
+					acceleration.x += -(FORCE * MASS);
 					break;
 					case Keyboard::S:
-					acceleration.y = FORCE/MASS;
+					acceleration.y += FORCE * MASS;
 					break;
 					case Keyboard::D:
-					acceleration.x = FORCE/MASS;
+					acceleration.x += FORCE * MASS;
 					break;
 					case Keyboard::F:
 					withFriction = !withFriction;
@@ -93,7 +127,7 @@ int main(){
 					acceleration.x = 0;
 					break;
 					case Keyboard::S:
-					acceleration.y = 0;
+					acceleration.y = 0;	
 					break;
 					case Keyboard::D:
 					acceleration.x = 0;
