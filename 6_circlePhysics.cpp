@@ -2,18 +2,17 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
-#include <stdlib.h>
 
 #define FPS 60
 #define TIMESTEP 1.0f / 60.0f
-#define FORCE 1000.0f
-#define MASS 1.0f 
-#define MASS_RECIP 1.0f
-#define MASS2 0.5f
-#define MASS2_RECIP 2.0f
+#define FORCE 10000.0f
+#define MASS 50.0f 
+#define MASS_RECIP 1.0f / MASS
+#define MASS2 1.0f
+#define MASS2_RECIP 1.0F / MASS2
 #define WIDTH 800
 #define HEIGHT 600
-#define RADIUS 25.0f
+#define RADIUS 30.0f
 #define ELASTICITY 1.0f
 #define FRICTION 0.2f * TIMESTEP
 
@@ -61,7 +60,6 @@ void initializeObjects(int a){
 		circles.push_back(tempCircle);
 	}
 	circles[0].setFillColor(Color::White);
-	//clearCollisionCheck();
 }
 
 void collisionResponse(int i, int j, Vector2f collisionNormal, float dist){
@@ -135,13 +133,11 @@ void checkWallCollision(){
 
 void updatePosition(){
 	for (int i = 0; i < c; i++){
+		velocity[i] += acceleration[i] * TIMESTEP;
 		if (withFriction){
 			if (i != 0) velocity[i] -= FRICTION * velocity[i] * MASS2_RECIP;
 			else velocity[i] -= FRICTION * velocity[i] * MASS_RECIP;
 		} 
-		else {
-			velocity[i] += acceleration[i] * TIMESTEP;
-		}
 		position[i] += (0.5f * acceleration[i] * TIMESTEP * TIMESTEP) + (velocity[i] * TIMESTEP);
 		circles[i].setPosition(position[i]);
 	}
@@ -159,8 +155,8 @@ int main(int argc, char** argv){
 	//make circles if argument is 0 < x < 35
 	c = atoi(argv[1]) + 1;
 	if ((c-1) > 35 || (c-1) < 0){
-		window.close();
 		cout << "Only numbers between 0 and 35 are allowed." << endl;
+		window.close();
 	}
 	else {
 		initializeObjects(c);
@@ -177,20 +173,19 @@ int main(int argc, char** argv){
 				case Event::KeyPressed:
 				switch(event.key.code){
 					case Keyboard::W:
-					acceleration[0].y += -(FORCE * MASS);
+					acceleration[0].y += -(FORCE * MASS_RECIP);
 					break;
 					case Keyboard::A:
-					acceleration[0].x += -(FORCE * MASS);
+					acceleration[0].x += -(FORCE * MASS_RECIP);
 					break;
 					case Keyboard::S:
-					acceleration[0].y += FORCE * MASS;
+					acceleration[0].y += FORCE * MASS_RECIP;
 					break;
 					case Keyboard::D:
-					acceleration[0].x += FORCE * MASS;
+					acceleration[0].x += FORCE * MASS_RECIP;
 					break;
 					case Keyboard::F:
 					withFriction = !withFriction;
-					cout << withFriction << endl;
 					if (withFriction) circles[0].setFillColor(Color::Green);
 					else circles[0].setFillColor(Color::White);
 					break;
@@ -217,7 +212,6 @@ int main(int argc, char** argv){
 				break;
 			}
 		}
-
 		//update positions first before checking for collisions
 		updatePosition();
 		checkCircleCollision();
