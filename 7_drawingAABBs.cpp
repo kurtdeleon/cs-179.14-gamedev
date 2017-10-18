@@ -17,6 +17,7 @@ RectangleShape rectangles[OBJECTS];
 RectangleShape AABB[OBJECTS];
 Vector2f ptOne[OBJECTS];
 Vector2f ptTwo[OBJECTS];
+Vector2f minAABB[OBJECTS];
 float MinXPoints[OBJECTS];
 float MinYPoints[OBJECTS];
 float DimX[OBJECTS];
@@ -33,35 +34,20 @@ float DimY[OBJECTS];
 //					//
 //////////////////////
 
+
 void checkCollision(){
-	//uses min-width
-	for(int a = 0; a < OBJECTS; a++){
-		MinXPoints[a] = AABB[a].getPosition().x - (AABB[a].getSize().x / 2);
-		MinYPoints[a] = AABB[a].getPosition().y - (AABB[a].getSize().y / 2);
-		DimX[a] = AABB[a].getSize().x;
-		DimY[a] = AABB[a].getSize().y;
-	}
-	for(int i = 0; i < OBJECTS; i++){
-		float AMinX1 = MinXPoints[i];
-		float AMinY1 = MinYPoints[i];
-		float ADimX = DimX[i];
-		float ADimY = DimY[i];
-		for(int j = 0; j < OBJECTS; j++){
-			if(i != j){
-				float BMinX1 = MinXPoints[j];
-				float BMinY1 = MinYPoints[j];
-				float BDimX = DimX[j];
-				float BDimY = DimY[j];
-				float xDiff = AMinX1 - BMinX1;
-				float yDiff = AMinY1 - BMinY1;
-				float negaXDiff = -xDiff;
-				float negaYDiff = -yDiff;
-				//either one of these conditions tell that the AABBs are not intersecting
-				if(xDiff > BDimX || negaXDiff > ADimX || yDiff > BDimY || negaYDiff	> ADimY){
+	for (int i = 0; i < OBJECTS; i++){
+		Vector2f diff;
+		for (int j = 0; j < OBJECTS; j++){
+			if (i != j){
+				diff.x = minAABB[i].x - minAABB[j].x;
+				diff.y = minAABB[i].y - minAABB[j].y;
+				if (diff.x > AABB[j].getSize().x || diff.y > AABB[j].getSize().y ||
+					-diff.x > AABB[i].getSize().x || -diff.y > AABB[i].getSize().y){
 					rectangles[i].setFillColor(Color::White);
 					rectangles[j].setFillColor(Color::White);
 				}
-				else{//AABB intersecting
+				else {
 					rectangles[i].setFillColor(Color::Red);
 					rectangles[j].setFillColor(Color::Red);
 				}
@@ -140,6 +126,9 @@ void drawAABB(){
 		AABB[i].setOrigin(AABB[i].getSize().x / 2, 
 			AABB[i].getSize().y / 2);
 		AABB[i].setPosition(rectangles[i].getPosition());
+
+		minAABB[i].x = AABB[i].getPosition().x - (AABB[i].getSize().x / 2);
+		minAABB[i].y = AABB[i].getPosition().y - (AABB[i].getSize().y / 2);
 	}
 }
 
