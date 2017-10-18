@@ -18,10 +18,6 @@ RectangleShape AABB[OBJECTS];
 Vector2f ptOne[OBJECTS];
 Vector2f ptTwo[OBJECTS];
 Vector2f minAABB[OBJECTS];
-float MinXPoints[OBJECTS];
-float MinYPoints[OBJECTS];
-float DimX[OBJECTS];
-float DimY[OBJECTS];
 
 //////////////////////
 //					//
@@ -42,12 +38,19 @@ void checkCollision(){
 			if (i != j){
 				diff.x = minAABB[i].x - minAABB[j].x;
 				diff.y = minAABB[i].y - minAABB[j].y;
-				if (diff.x > AABB[j].getSize().x || diff.y > AABB[j].getSize().y ||
-					-diff.x > AABB[i].getSize().x || -diff.y > AABB[i].getSize().y){
+				if(diff.x > AABB[j].getSize().x){
 					rectangles[i].setFillColor(Color::White);
 					rectangles[j].setFillColor(Color::White);
-				}
-				else {
+				}else if(diff.y > AABB[j].getSize().y){
+					rectangles[i].setFillColor(Color::White);
+					rectangles[j].setFillColor(Color::White);
+				}else if(-diff.x > AABB[i].getSize().x){
+					rectangles[i].setFillColor(Color::White);
+					rectangles[j].setFillColor(Color::White);
+				}else if(-diff.y > AABB[i].getSize().y){
+					rectangles[i].setFillColor(Color::White);
+					rectangles[j].setFillColor(Color::White);
+				}else{
 					rectangles[i].setFillColor(Color::Red);
 					rectangles[j].setFillColor(Color::Red);
 				}
@@ -55,6 +58,17 @@ void checkCollision(){
 		}
 	}
 }
+
+				// if (diff.x > AABB[j].getSize().x || diff.y > AABB[j].getSize().y ||
+				// 	-diff.x > AABB[i].getSize().x || -diff.y > AABB[i].getSize().y){
+				// 	rectangles[i].setFillColor(Color::White);
+				// 	rectangles[j].setFillColor(Color::White);
+				// }
+				// else {
+				// 	rectangles[i].setFillColor(Color::Red);
+				// 	rectangles[j].setFillColor(Color::Red);
+				// }
+
 
 void initializeObjects(){
 	//create Rectangles
