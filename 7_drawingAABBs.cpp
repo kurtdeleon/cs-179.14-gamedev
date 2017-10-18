@@ -17,6 +17,10 @@ RectangleShape rectangles[OBJECTS];
 RectangleShape AABB[OBJECTS];
 Vector2f ptOne[OBJECTS];
 Vector2f ptTwo[OBJECTS];
+float MinXPoints[OBJECTS];
+float MinYPoints[OBJECTS];
+float DimX[OBJECTS];
+float DimY[OBJECTS];
 
 //////////////////////
 //					//
@@ -31,17 +35,23 @@ Vector2f ptTwo[OBJECTS];
 
 void checkCollision(){
 	//uses min-width
+	for(int a = 0; a < OBJECTS; a++){
+		MinXPoints[a] = AABB[a].getPosition().x - (AABB[a].getSize().x / 2);
+		MinYPoints[a] = AABB[a].getPosition().y - (AABB[a].getSize().y / 2);
+		DimX[a] = AABB[a].getSize().x;
+		DimY[a] = AABB[a].getSize().y;
+	}
 	for(int i = 0; i < OBJECTS; i++){
-		float AMinX1 = ptOne[i].x;
-		float AMinY1 = ptOne[i].y;
-		float ADimX = AABB[i].getSize().x;
-		float ADimY = AABB[i].getSize().y;
+		float AMinX1 = MinXPoints[i];
+		float AMinY1 = MinYPoints[i];
+		float ADimX = DimX[i];
+		float ADimY = DimY[i];
 		for(int j = 0; j < OBJECTS; j++){
 			if(i != j){
-				float BMinX1 = ptOne[j].x;
-				float BMinY1 = ptOne[j].y;
-				float BDimX = AABB[j].getSize().x;
-				float BDimY = AABB[j].getSize().y;
+				float BMinX1 = MinXPoints[j];
+				float BMinY1 = MinYPoints[j];
+				float BDimX = DimX[j];
+				float BDimY = DimY[j];
 				float xDiff = AMinX1 - BMinX1;
 				float yDiff = AMinY1 - BMinY1;
 				float negaXDiff = -xDiff;
