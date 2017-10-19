@@ -6,10 +6,8 @@
 
 #define FPS 60
 #define TIMESTEP 1.0f / FPS
-#define WIDTH 800
-#define HEIGHT 600
-#define WINDOW_W 800
-#define WINDOW_H 600
+#define WINDOW_W 1280
+#define WINDOW_H 720
 
 using namespace std;
 using namespace sf;
@@ -53,13 +51,13 @@ void checkCollision(){
 //check specific rectangle's collision versus other rectangles
 bool iwant2die(int a) {
 	Vector2f diff, min1, min2;
-	min1.x = rectangles[a].getPosition().x - rectangles[a].getSize().x;
-	min1.y = rectangles[a].getPosition().y - rectangles[a].getSize().y;
+	min1.x = rectangles[a].getPosition().x - (rectangles[a].getSize().x / 2);
+	min1.y = rectangles[a].getPosition().y - (rectangles[a].getSize().y / 2);
 
 	for (int i = 0; i < OBJECTS; i++){
 		if (a != i){
-			min2.x = rectangles[i].getPosition().x - rectangles[i].getSize().x;
-			min2.y = rectangles[i].getPosition().y - rectangles[i].getSize().y;
+			min2.x = rectangles[i].getPosition().x - (rectangles[i].getSize().x / 2);
+			min2.y = rectangles[i].getPosition().y - (rectangles[i].getSize().y / 2);
 			diff = min1 - min2;
 			if (diff.x > rectangles[i].getSize().x || diff.y > rectangles[i].getSize().y || -diff.x > rectangles[a].getSize().x || -diff.y > rectangles[a].getSize().y){
 				return true;
@@ -73,17 +71,13 @@ bool iwant2die(int a) {
 void initialCheckCollision(){
 	int counter = 0;
 	//checks collision for all objects
-	//starts with the smallest one (easiest to reposition)
-	for (int i = (OBJECTS-1); i > 0; i--){
+	for (int i = 0; i < OBJECTS; i++){
 		while (!iwant2die(i)){
 			rectangles[i].setPosition(rand() % (WINDOW_H-1), rand() % (WINDOW_W-1));
 			counter++;
 
 			//code deems it impossible and makes u run it again rip
-			if (counter > 2500){
-				cout << "This is impossible desu. Run code again." << endl;
-				window.close();
-			}
+			
 		}
 		counter = 0;
 	}
@@ -91,18 +85,18 @@ void initialCheckCollision(){
 
 void initializeObjects(int a){
 	//resize the vectors
-	rectangles.reserve(a);
-	AABB.reserve(a);
-	ptOne.reserve(a);
-	ptTwo.reserve(a);
-	minAABB.reserve(a);
+	rectangles.resize(a);
+	AABB.resize(a);
+	ptOne.resize(a);
+	ptTwo.resize(a);
+	minAABB.resize(a);
 
 	//create Rectangles
 	for (int i = 0; i < OBJECTS; i++){
 		//create Rectangles while checking for collisions
 		if (i == 0) rectangles[i].setSize(Vector2f(10, 550));
-		else if (i % 2 == 0) rectangles[i].setSize(Vector2f(200 - (i * 10), 200 - (i * 12)));
-		else rectangles[i].setSize(Vector2f(200 - (i * 12), 200 - (i * 10)));
+		else if (i % 2 == 0) rectangles[i].setSize(Vector2f(150 - (i * 5), 150 - (i * 7)));
+		else rectangles[i].setSize(Vector2f(150 - (i * 7), 150 - (i * 5)));
 
 		//set color, origin, and rotation
 		rectangles[i].setFillColor(Color::White);
@@ -110,14 +104,15 @@ void initializeObjects(int a){
 		rectangles[i].setRotation(0);
 
 		//set the position
-		rectangles[i].setPosition(rand() % (WINDOW_H-30) + 30, rand() % (WINDOW_W-30) + 30);
+		rectangles[i].setPosition(rand() % (WINDOW_H-1), rand() % (WINDOW_W-1));
 	}
 
 	//check initial overlapping
 	initialCheckCollision();
 
 	//set position (center point)
-	copy(begin(rectangles), end(rectangles), begin(AABB));
+	//copy(begin(rectangles), end(rectangles), begin(AABB));
+	AABB = rectangles;
 	for (int i = 0; i < OBJECTS; i++){
 		//fill in AABB array
 		AABB[i].setFillColor(Color::Transparent);
@@ -129,7 +124,12 @@ void initializeObjects(int a){
 		ptOne[i].y = rectangles[i].getPosition().y - (rectangles[i].getSize().y / 2);
 		ptTwo[i].x = rectangles[i].getPosition().x - (rectangles[i].getSize().x / 2);
 		ptTwo[i].y = rectangles[i].getPosition().y + (rectangles[i].getSize().y / 2);
+	} 
+	cout << "rect length" << rectangles.size() << endl;
+	for (int i = 0; i < OBJECTS; i++){
+		cout << rectangles[i].getPosition().x << " " << rectangles[i].getPosition().y << endl;
 	}
+	//window.close();
 }
 
 void rotateObjects(){
@@ -178,14 +178,15 @@ int main(int argc, char** argv){
 	//window stuff
 	ContextSettings settings;
 	settings.antialiasingLevel = 8;
-	window.create(VideoMode(WIDTH, HEIGHT), "Drawing AABBs", Style::Default, settings);
+	window.create(VideoMode(WINDOW_W, WINDOW_H), "Drawing AABBs", Style::Default, settings);
 	window.setFramerateLimit(FPS);
 	window.setKeyRepeatEnabled(false);
 	window.setActive(false);
+	srand(time(NULL));
 
 	//create the rectangles and AABBs
-	OBJECTS = atoi(argv[1]) + 1;
-	if ((OBJECTS-1) > 15 || (OBJECTS-1) < 0){
+	OBJECTS = atoi(argv[1]);
+	if (OBJECTS > 15 || OBJECTS < 0){
 		cout << "Only numbers between 1 and 15 are allowed." << endl;
 		window.close();
 	}
