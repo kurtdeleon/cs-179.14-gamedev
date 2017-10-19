@@ -19,17 +19,16 @@ Vector2f ptOne[OBJECTS];
 Vector2f ptTwo[OBJECTS];
 Vector2f minAABB[OBJECTS];
 
-//////////////////////
-//					//
-//	ptOne		   	//
-//  	A--------*	//
-//  	|		 |	//
-//  	|		 |	//
-// 	 	B--------*	//
-//	ptTwo			//
-//					//
-//////////////////////
+/*********************
+  ptOne
+    A-------------+
+    |             |
+    |             |
+    |             |
+    B-------------+
+  ptTwo
 
+*********************/
 
 void checkCollision(){
 	for (int i = 0; i < OBJECTS; i++){
@@ -38,19 +37,11 @@ void checkCollision(){
 			if (i != j){
 				diff.x = minAABB[i].x - minAABB[j].x;
 				diff.y = minAABB[i].y - minAABB[j].y;
-				if(diff.x > AABB[j].getSize().x){
-					rectangles[i].setFillColor(Color::White);
-					rectangles[j].setFillColor(Color::White);
-				}else if(diff.y > AABB[j].getSize().y){
-					rectangles[i].setFillColor(Color::White);
-					rectangles[j].setFillColor(Color::White);
-				}else if(-diff.x > AABB[i].getSize().x){
-					rectangles[i].setFillColor(Color::White);
-					rectangles[j].setFillColor(Color::White);
-				}else if(-diff.y > AABB[i].getSize().y){
-					rectangles[i].setFillColor(Color::White);
-					rectangles[j].setFillColor(Color::White);
-				}else{
+				if (diff.x > AABB[j].getSize().x || diff.y > AABB[j].getSize().y ||
+					-diff.x > AABB[i].getSize().x || -diff.y > AABB[i].getSize().y){
+					continue;
+				}
+				else {
 					rectangles[i].setFillColor(Color::Red);
 					rectangles[j].setFillColor(Color::Red);
 				}
@@ -58,17 +49,6 @@ void checkCollision(){
 		}
 	}
 }
-
-				// if (diff.x > AABB[j].getSize().x || diff.y > AABB[j].getSize().y ||
-				// 	-diff.x > AABB[i].getSize().x || -diff.y > AABB[i].getSize().y){
-				// 	rectangles[i].setFillColor(Color::White);
-				// 	rectangles[j].setFillColor(Color::White);
-				// }
-				// else {
-				// 	rectangles[i].setFillColor(Color::Red);
-				// 	rectangles[j].setFillColor(Color::Red);
-				// }
-
 
 void initializeObjects(){
 	//create Rectangles
@@ -143,6 +123,9 @@ void drawAABB(){
 
 		minAABB[i].x = AABB[i].getPosition().x - (AABB[i].getSize().x / 2);
 		minAABB[i].y = AABB[i].getPosition().y - (AABB[i].getSize().y / 2);
+
+		//before checking for collisions, reset the colors first!
+		rectangles[i].setFillColor(Color::White);
 	}
 }
 
