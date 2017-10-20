@@ -39,27 +39,34 @@ void checkCollision(){
 				if (diff.x > AABB[j].getSize().x || diff.y > AABB[j].getSize().y ||
 					-diff.x > AABB[i].getSize().x || -diff.y > AABB[i].getSize().y){
 					continue;
+				}
+				else {
+					rectangles[i].setFillColor(Color::Red);
+					rectangles[j].setFillColor(Color::Red);
+				}
 			}
-			else {
-				rectangles[i].setFillColor(Color::Red);
-				rectangles[j].setFillColor(Color::Red);
-			}
-		}
-	} 
-}} // <--- this is normal HAHAHAHA
+		} 
+	}
+}
 
 //check specific rectangle's collision versus other rectangles
-bool iwant2die(int a) {
+bool isColliding(int a) {
 	Vector2f diff, min1, min2;
 	min1.x = rectangles[a].getPosition().x - (rectangles[a].getSize().x / 2);
 	min1.y = rectangles[a].getPosition().y - (rectangles[a].getSize().y / 2);
 
+	//check if rect[a] is colliding with other rects!
+	//if colliding, method returns 'true' and this gets called again by initialCheckCollion
+	//else, it returns 'false' and stops the loop
 	for (int i = 0; i < OBJECTS; i++){
 		if (a != i){
 			min2.x = rectangles[i].getPosition().x - (rectangles[i].getSize().x / 2);
 			min2.y = rectangles[i].getPosition().y - (rectangles[i].getSize().y / 2);
 			diff = min1 - min2;
 			if (diff.x > rectangles[i].getSize().x || diff.y > rectangles[i].getSize().y || -diff.x > rectangles[a].getSize().x || -diff.y > rectangles[a].getSize().y){
+				continue;
+			}
+			else {
 				return true;
 			}
 		}
@@ -71,15 +78,11 @@ bool iwant2die(int a) {
 void initialCheckCollision(){
 	int counter = 0;
 	//checks collision for all objects
+	//if isColliding() returns 'true' (meaning it does collide), the position gets reset
 	for (int i = 0; i < OBJECTS; i++){
-		while (!iwant2die(i)){
-			rectangles[i].setPosition(rand() % (WINDOW_H-1), rand() % (WINDOW_W-1));
-			counter++;
-
-			//code deems it impossible and makes u run it again rip
-			
+		while (isColliding(i)){
+			rectangles[i].setPosition(rand() % (WINDOW_W - 200) + 100, rand() % (WINDOW_H - 200) + 100);			
 		}
-		counter = 0;
 	}
 }
 
@@ -92,11 +95,12 @@ void initializeObjects(int a){
 	minAABB.resize(a);
 
 	//create Rectangles
+	Vector2f max;
 	for (int i = 0; i < OBJECTS; i++){
 		//create Rectangles while checking for collisions
-		if (i == 0) rectangles[i].setSize(Vector2f(10, 550));
-		else if (i % 2 == 0) rectangles[i].setSize(Vector2f(150 - (i * 5), 150 - (i * 7)));
-		else rectangles[i].setSize(Vector2f(150 - (i * 7), 150 - (i * 5)));
+		//if (i == 0) rectangles[i].setSize(Vector2f(10, 550));
+		if (i % 2 == 0) rectangles[i].setSize(Vector2f(80, 150 - (i * 7)));
+		else rectangles[i].setSize(Vector2f(150 - (i * 7), 80));
 
 		//set color, origin, and rotation
 		rectangles[i].setFillColor(Color::White);
@@ -104,14 +108,13 @@ void initializeObjects(int a){
 		rectangles[i].setRotation(0);
 
 		//set the position
-		rectangles[i].setPosition(rand() % (WINDOW_H-1), rand() % (WINDOW_W-1));
+		rectangles[i].setPosition(rand() % (WINDOW_W - 200) + 100, rand() % (WINDOW_H - 200) + 100);
 	}
 
 	//check initial overlapping
 	initialCheckCollision();
 
 	//set position (center point)
-	//copy(begin(rectangles), end(rectangles), begin(AABB));
 	AABB = rectangles;
 	for (int i = 0; i < OBJECTS; i++){
 		//fill in AABB array
@@ -125,11 +128,6 @@ void initializeObjects(int a){
 		ptTwo[i].x = rectangles[i].getPosition().x - (rectangles[i].getSize().x / 2);
 		ptTwo[i].y = rectangles[i].getPosition().y + (rectangles[i].getSize().y / 2);
 	} 
-	cout << "rect length" << rectangles.size() << endl;
-	for (int i = 0; i < OBJECTS; i++){
-		cout << rectangles[i].getPosition().x << " " << rectangles[i].getPosition().y << endl;
-	}
-	//window.close();
 }
 
 void rotateObjects(){
@@ -147,6 +145,7 @@ void drawAABB(){
 		float cosAngle = abs(cos(rectangles[i].getRotation() * M_PI/180));
 
 		//calculate for new rotated position values
+		//https://gamedev.stackexchange.com/a/86784
 		rotOne.x = ((ptOne[i].x - rectangles[i].getPosition().x) * cosAngle) 
 		- ((ptOne[i].y - rectangles[i].getPosition().y) * sinAngle) + rectangles[i].getPosition().x;
 		rotOne.y = ((ptOne[i].x - rectangles[i].getPosition().x) * sinAngle) 
@@ -166,6 +165,7 @@ void drawAABB(){
 			AABB[i].getSize().y / 2);
 		AABB[i].setPosition(rectangles[i].getPosition());
 
+		//get the new minimum values of AABB
 		minAABB[i].x = AABB[i].getPosition().x - (AABB[i].getSize().x / 2);
 		minAABB[i].y = AABB[i].getPosition().y - (AABB[i].getSize().y / 2);
 
