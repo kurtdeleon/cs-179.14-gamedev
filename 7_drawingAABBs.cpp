@@ -2,22 +2,20 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <vector>
 
 #define FPS 60
 #define TIMESTEP 1.0f / FPS
-#define WIDTH 800
-#define HEIGHT 600
-#define OBJECTS 5
+#define WINDOW_W 1600
+#define WINDOW_H 900
 
 using namespace std;
 using namespace sf;
 
 RenderWindow window;
-RectangleShape rectangles[OBJECTS];
-RectangleShape AABB[OBJECTS];
-Vector2f ptOne[OBJECTS];
-Vector2f ptTwo[OBJECTS];
-Vector2f minAABB[OBJECTS];
+int OBJECTS;
+vector<RectangleShape> rectangles, AABB;
+vector<Vector2f> ptOne, ptTwo, minAABB;
 
 /*********************
   ptOne
@@ -30,6 +28,7 @@ Vector2f minAABB[OBJECTS];
 
 *********************/
 
+//normal check collision
 void checkCollision(){
 	for (int i = 0; i < OBJECTS; i++){
 		Vector2f diff;
@@ -46,33 +45,85 @@ void checkCollision(){
 					rectangles[j].setFillColor(Color::Red);
 				}
 			}
+		} 
+	}
+}
+
+//check specific rectangle's collision versus other rectangles
+bool isColliding(int a) {
+	Vector2f diff, min1, min2;
+	min1.x = rectangles[a].getPosition().x - (rectangles[a].getSize().x / 2);
+	min1.y = rectangles[a].getPosition().y - (rectangles[a].getSize().y / 2);
+
+	//check if rect[a] is colliding with other rects!
+	//if colliding, method returns 'true' and this gets called again by initialCheckCollion
+	//else, it returns 'false' and stops the loop
+	for (int i = 0; i < OBJECTS; i++){
+		if (a != i){
+			min2.x = rectangles[i].getPosition().x - (rectangles[i].getSize().x / 2);
+			min2.y = rectangles[i].getPosition().y - (rectangles[i].getSize().y / 2);
+			diff = min1 - min2;
+			if (diff.x > rectangles[i].getSize().x || diff.y > rectangles[i].getSize().y || -diff.x > rectangles[a].getSize().x || -diff.y > rectangles[a].getSize().y){
+				continue;
+			}
+			else {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+//initial checking of collision
+void initialCheckCollision(){
+	int counter = 0;
+	//checks collision for all objects
+	//if isColliding() returns 'true' (meaning it does collide), the position gets reset
+	for (int i = 0; i < OBJECTS; i++){
+		while (isColliding(i)){
+			rectangles[i].setPosition(rand() % (WINDOW_W - 200) + 100, rand() % (WINDOW_H - 200) + 100);			
 		}
 	}
 }
 
-void initializeObjects(){
-	//create Rectangles
-	rectangles[0].setSize(Vector2f(70, 100));
-	rectangles[1].setSize(Vector2f(90, 300));
-	rectangles[2].setSize(Vector2f(10, 550));
-	rectangles[3].setSize(Vector2f(260, 140));
-	rectangles[4].setSize(Vector2f(100, 240));
+void initializeObjects(int a){
+	//resize the vectors
+	rectangles.resize(a);
+	AABB.resize(a);
+	ptOne.resize(a);
+	ptTwo.resize(a);
+	minAABB.resize(a);
 
+	//create Rectangles
+	Vector2f max;
 	for (int i = 0; i < OBJECTS; i++){
+		//create Rectangles while checking for collisions
+		//if (i == 0) rectangles[i].setSize(Vector2f(10, 550));
+		/*if (i % 2 == 0) rectangles[i].setSize(Vector2f(80, 150 - (i * 7)));
+		else rectangles[i].setSize(Vector2f(150 - (i * 7), 80));*/
+
+		rectangles[i].setSize(
+			Vector2f(
+			(rand() % 180) + 50,
+			(rand() % 180) + 50)
+			);
+
+
+
 		//set color, origin, and rotation
 		rectangles[i].setFillColor(Color::White);
-		rectangles[i].setOrigin(rectangles[i].getSize().x / 2, 
-			rectangles[i].getSize().y / 2);
+		rectangles[i].setOrigin(rectangles[i].getSize().x / 2, rectangles[i].getSize().y / 2);
 		rectangles[i].setRotation(0);
+
+		//set the position
+		rectangles[i].setPosition(rand() % (WINDOW_W - 200) + 100, rand() % (WINDOW_H - 200) + 100);
 	}
+
+	//check initial overlapping
+	initialCheckCollision();
+
 	//set position (center point)
-	rectangles[0].setPosition(105, 105);
-	rectangles[1].setPosition(285, 260);
-	rectangles[2].setPosition(400, 300);
-	rectangles[3].setPosition(600, 165);
-	rectangles[4].setPosition(570, 390);
-	
-	copy(begin(rectangles), end(rectangles), begin(AABB));
+	AABB = rectangles;
 	for (int i = 0; i < OBJECTS; i++){
 		//fill in AABB array
 		AABB[i].setFillColor(Color::Transparent);
@@ -84,13 +135,13 @@ void initializeObjects(){
 		ptOne[i].y = rectangles[i].getPosition().y - (rectangles[i].getSize().y / 2);
 		ptTwo[i].x = rectangles[i].getPosition().x - (rectangles[i].getSize().x / 2);
 		ptTwo[i].y = rectangles[i].getPosition().y + (rectangles[i].getSize().y / 2);
-	}
+	} 
 }
 
 void rotateObjects(){
 	//rotate objects
 	for (int i = 0; i < OBJECTS; i++) {
-		rectangles[i].rotate(9 * (i+1) * TIMESTEP);
+		rectangles[i].rotate(6 * (i+1) * TIMESTEP);
 	}
 }
 
@@ -102,6 +153,7 @@ void drawAABB(){
 		float cosAngle = abs(cos(rectangles[i].getRotation() * M_PI/180));
 
 		//calculate for new rotated position values
+		//https://gamedev.stackexchange.com/a/86784
 		rotOne.x = ((ptOne[i].x - rectangles[i].getPosition().x) * cosAngle) 
 		- ((ptOne[i].y - rectangles[i].getPosition().y) * sinAngle) + rectangles[i].getPosition().x;
 		rotOne.y = ((ptOne[i].x - rectangles[i].getPosition().x) * sinAngle) 
@@ -110,7 +162,7 @@ void drawAABB(){
 		- ((ptTwo[i].y - rectangles[i].getPosition().y) * sinAngle) + rectangles[i].getPosition().x;
 		rotTwo.y = ((ptTwo[i].x - rectangles[i].getPosition().x) * sinAngle) 
 		+ ((ptTwo[i].y - rectangles[i].getPosition().y) * cosAngle) + rectangles[i].getPosition().y;
-		
+
 		//determine the size of the AABB
 		size.x = (AABB[i].getPosition().x - min(abs(rotOne.x), abs(rotTwo.x))) * 2;
 		size.y = (AABB[i].getPosition().y - min(abs(rotOne.y), abs(rotTwo.y))) * 2;
@@ -121,6 +173,7 @@ void drawAABB(){
 			AABB[i].getSize().y / 2);
 		AABB[i].setPosition(rectangles[i].getPosition());
 
+		//get the new minimum values of AABB
 		minAABB[i].x = AABB[i].getPosition().x - (AABB[i].getSize().x / 2);
 		minAABB[i].y = AABB[i].getPosition().y - (AABB[i].getSize().y / 2);
 
@@ -129,17 +182,25 @@ void drawAABB(){
 	}
 }
 
-int main(){
+int main(int argc, char** argv){
 	//window stuff
 	ContextSettings settings;
 	settings.antialiasingLevel = 8;
-	window.create(VideoMode(WIDTH, HEIGHT), "Drawing AABBs", Style::Default, settings);
+	window.create(VideoMode(WINDOW_W, WINDOW_H), "Drawing AABBs", Style::Default, settings);
 	window.setFramerateLimit(FPS);
 	window.setKeyRepeatEnabled(false);
 	window.setActive(false);
+	srand(time(NULL));
 
 	//create the rectangles and AABBs
-	initializeObjects();
+	OBJECTS = atoi(argv[1]);
+	if (OBJECTS > 15 || OBJECTS < 1){
+		cout << "Only numbers between 1 and 15 are allowed." << endl;
+		window.close();
+	}
+	else {
+		initializeObjects(OBJECTS);
+	}
 
 	while(window.isOpen()){
 		//close if user wants to
