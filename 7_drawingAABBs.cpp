@@ -98,18 +98,8 @@ void initializeObjects(int a){
 	Vector2f max;
 	for (int i = 0; i < OBJECTS; i++){
 		//create Rectangles while checking for collisions
-		//if (i == 0) rectangles[i].setSize(Vector2f(10, 550));
-		/*if (i % 2 == 0) rectangles[i].setSize(Vector2f(80, 150 - (i * 7)));
-		else rectangles[i].setSize(Vector2f(150 - (i * 7), 80));*/
-
-		rectangles[i].setSize(
-			Vector2f(
-			(rand() % 180) + 50,
-			(rand() % 180) + 50)
-			);
-
-
-
+		rectangles[i].setSize(Vector2f((rand() % 180) + 50, (rand() % 180) + 50));
+		
 		//set color, origin, and rotation
 		rectangles[i].setFillColor(Color::White);
 		rectangles[i].setOrigin(rectangles[i].getSize().x / 2, rectangles[i].getSize().y / 2);
@@ -118,7 +108,6 @@ void initializeObjects(int a){
 		//set the position
 		rectangles[i].setPosition(rand() % (WINDOW_W - 200) + 100, rand() % (WINDOW_H - 200) + 100);
 	}
-
 	//check initial overlapping
 	initialCheckCollision();
 
