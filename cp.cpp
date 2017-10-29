@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 #define FPS 60
 #define TIMESTEP 1.0f / FPS
@@ -18,10 +19,146 @@ vector<RectangleShape> AABB;
 bool rotateOn = false;
 bool u, d, l, r;
 
-/*  
-Credits:
-https://en.wikipedia.org/wiki/Centroid#Centroid_of_a_polygon 
-*/
+//drawing AABBs
+void drawAABBs(){
+	for(int i = 0; i < objects; i++){
+		Vector2f minimum = shapes[i].getTransform().transformPoint(shapes[i].getPoint(0));
+		Vector2f maximum = minimum;
+		for(int j = 1; j < shapes[i].getPointCount(); ++j){
+			Vector2f point = shapes[i].getTransform().transformPoint(shapes[i].getPoint(j));
+			minimum.x = min(minimum.x, point.x);
+			minimum.y = min(minimum.y, point.y);
+			maximum.x = max(maximum.x, point.x);
+			maximum.y = max(maximum.y, point.y);
+		}
+		auto rect = FloatRect(minimum, maximum-minimum);
+		AABB[i].setSize(Vector2f(rect.width, rect.height));
+		AABB[i].setPosition(rect.left, rect.top);
+	}
+}
+
+//checks if AABBs are colliding using min-width
+bool isAABBColliding(int a, int b){
+	Vector2f diff;
+	diff.x = AABB[a].getGlobalBounds().left - AABB[b].getGlobalBounds().left;
+	diff.y = AABB[a].getGlobalBounds().top - AABB[b].getGlobalBounds().top;
+	
+	if (diff.x > AABB[b].getSize().x || diff.y > AABB[b].getSize().y ||
+		-diff.x > AABB[a].getSize().x || -diff.y > AABB[a].getSize().y){
+		return false;
+	}
+
+	shapes[a].setFillColor(Color::Green);
+	shapes[b].setFillColor(Color::Green);
+	return true;
+}
+
+///////////////////////////////////////////////////////////////
+// EVERYTHING INSIDE THIS SHIT IS VOLATILE
+///////////////////////////////////////////////////////////////
+
+Vector2f getPerpendicular(Vector2f f){
+	Vector2f perp;
+	perp.x = f.y;
+	perp.y = -f.x;
+	return perp;
+}
+
+Vector2f normalize(Vector2f n){
+	Vector2f normalizedVector;
+	float x = sqrt((n.x * n.x) + (n.y * n.y));
+	normalizedVector.x = n.x / x;
+	normalizedVector.y = n.y / x;
+	return normalizedVector;
+}
+
+Vector2f projection(Vector2f v, Vector2f u){
+	float dot = (v.x * v.x) + (v.y * v.y);
+	return (u * dot);
+}
+
+//0 = min, 1 = max
+vector<Vector2f> getEndsOfLineSegment(vector<Vector2f> points, Vector2f perp){
+	vector<Vector2f> ends;
+	ends.resize(2);
+	
+	for (int i = 0; i < points.size(); i++){
+		if (i != 0){
+			Vector2f p = projection(points[i], perp);
+			ends[0].x = min(ends[0].x, p.x);
+			ends[0].y = min(ends[0].y, p.y);
+			ends[1].x = max(ends[1].x, p.x);
+			ends[1].y = max(ends[1].y, p.y);
+		}
+		else {
+			ends[0] = projection(points[i], perp);
+			ends[1] = projection(points[i], perp);
+		}
+	}
+	return ends;
+}
+
+vector<Vector2f> getPerpendicularNormal(vector<Vector2f> corners1, vector<Vector2f> corners2){
+	vector<Vector2f> axes;
+	axes.resize(corners1.size() + corners2.size());
+
+	for (int i = 0; i < corners1.size(); i++){
+		Vector2f axis;
+		if (i+1 != corners1.size()) axis = corners1[i] - corners1[i+1];
+		else axis = corners1[i] - corners1[0];
+		axis = getPerpendicular(axis);
+		axes.push_back(normalize(axis));
+	}
+
+	for (int i = 0; i < corners2.size(); i++){
+		Vector2f axis;
+		if (i+1 != corners2.size()) axis = corners2[i] - corners2[i+1];
+		else axis = corners2[i] - corners2[0];
+		axis = getPerpendicular(axis);
+		axes.push_back(normalize(axis));
+	}
+	return axes;
+}
+
+vector<Vector2f> getCorners(int index){
+	vector<Vector2f> corners;
+	corners.resize(shapes[index].getPointCount());
+	for (int i = 0; i < corners.size(); i++){
+		corners.push_back(shapes[index].getTransform().transformPoint(shapes[index].getPoint(i)));
+	}
+}
+
+void checkSATCollision(){
+	for (int i = 0; i < objects; i++){
+		for (int j = 0; j < objects; j++){
+			if (i != j){
+				if (isAABBColliding(i, j)){
+					vector<Vector2f> perpNorm = getPerpendicularNormal(getCorners(i), getCorners(j));
+					for (int k = 0; k < perpNorm.size(); k++){
+						vector<Vector2f> ends1 = getEndsOfLineSegment(getCorners(i), perpNorm[k]);
+						vector<Vector2f> ends2 = getEndsOfLineSegment(getCorners(j), perpNorm[k]);			
+						//ends1[0] = min of shape1
+						//ends1[1] = max of shape1
+						if (ends2[0].x > ends1[1].x || ends2[0].y > ends1[1].y
+							|| ends2[1].x > ends1[0].x || ends2[1].y > ends1[0].y){
+							continue;
+						}
+						else {
+							shapes[i].setFillColor(Color::Red);
+							shapes[j].setFillColor(Color::Red);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////
+// EVERYTHING INSIDE THIS SHIT IS VOLATILE
+///////////////////////////////////////////////////////////////
+
 Vector2f getCentroid(vector<Vector2f> p){
 	Vector2f centroid;
 	float area;
@@ -89,53 +226,6 @@ void initializeObjects(){
 	}
 }
 
-/*
-Elmo's pro AABB method
-*/
-void drawAABBs(){
-	for(int i = 0; i < objects; i++){
-		Vector2f minimum = shapes[i].getTransform().transformPoint(shapes[i].getPoint(0));
-		Vector2f maximum = minimum;
-		for(int j = 1; j < shapes[i].getPointCount(); ++j){
-			Vector2f point = shapes[i].getTransform().transformPoint(shapes[i].getPoint(j));
-			minimum.x = min(minimum.x, point.x);
-			minimum.y = min(minimum.y, point.y);
-			maximum.x = max(maximum.x, point.x);
-			maximum.y = max(maximum.y, point.y);
-		}
-		auto rect = FloatRect(minimum, maximum-minimum);
-		AABB[i].setSize(Vector2f(rect.width, rect.height));
-		AABB[i].setPosition(rect.left, rect.top);
-	}
-}
-
-bool isAABBColliding(int a, int b){
-	Vector2f diff;
-	diff.x = AABB[a].getGlobalBounds().left - AABB[b].getGlobalBounds().left;
-	diff.y = AABB[a].getGlobalBounds().top - AABB[b].getGlobalBounds().top;
-	
-	if (diff.x > AABB[b].getSize().x || diff.y > AABB[b].getSize().y ||
-		-diff.x > AABB[a].getSize().x || -diff.y > AABB[a].getSize().y){
-		return false;
-	}
-	return true;
-}
-
-void checkSATCollision(){
-	for (int i = 0; i < objects; i++){
-		for (int j = 0; j < objects; j++){
-			if (i != j){
-				if (isAABBColliding(i, j)){
-					cout << "is colliding!" << endl;
-				}
-			}
-			else {
-				continue;
-			}
-		}
-	}
-}
-
 void moveAll(){
 	//movement
 	if (u) shapes[0].move(0, -SPEED);
@@ -148,6 +238,12 @@ void rotateShapes(){
 	//rotate objects
 	for (int i = 0; i < objects; i++) {
 		shapes[i].rotate(6 * (i+1) * TIMESTEP);
+	}
+}
+
+void resetColors(){
+	for (int i = 0; i < objects; i++) {
+		shapes[i].setFillColor(Color::White);
 	}
 }
 
@@ -219,9 +315,10 @@ int main(){
 
 		moveAll();
 		if (rotateOn) rotateShapes();
-		checkSATCollision();
 		drawAABBs();
-
+		resetColors();
+		checkSATCollision();
+		
 		window.clear(Color::Black);
 		for(const auto& shape : shapes) { window.draw(shape); }
 		for(const auto& aabb : AABB) { window.draw(aabb); }
