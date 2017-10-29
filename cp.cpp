@@ -109,6 +109,33 @@ void drawAABBs(){
 	}
 }
 
+bool isAABBColliding(int a, int b){
+	Vector2f diff;
+	diff.x = AABB[a].getGlobalBounds().left - AABB[b].getGlobalBounds().left;
+	diff.y = AABB[a].getGlobalBounds().top - AABB[b].getGlobalBounds().top;
+	
+	if (diff.x > AABB[b].getSize().x || diff.y > AABB[b].getSize().y ||
+		-diff.x > AABB[a].getSize().x || -diff.y > AABB[a].getSize().y){
+		return false;
+	}
+	return true;
+}
+
+void checkSATCollision(){
+	for (int i = 0; i < objects; i++){
+		for (int j = 0; j < objects; j++){
+			if (i != j){
+				if (isAABBColliding(i, j)){
+					cout << "is colliding!" << endl;
+				}
+			}
+			else {
+				continue;
+			}
+		}
+	}
+}
+
 void moveAll(){
 	//movement
 	if (u) shapes[0].move(0, -SPEED);
@@ -192,6 +219,7 @@ int main(){
 
 		moveAll();
 		if (rotateOn) rotateShapes();
+		checkSATCollision();
 		drawAABBs();
 
 		window.clear(Color::Black);
