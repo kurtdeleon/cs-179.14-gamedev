@@ -43,81 +43,48 @@ bool isAABBColliding(int a, int b){
 	diff.x = AABB[a].getGlobalBounds().left - AABB[b].getGlobalBounds().left;
 	diff.y = AABB[a].getGlobalBounds().top - AABB[b].getGlobalBounds().top;
 	
+	//returns false if it is not colliding
 	if (diff.x > AABB[b].getSize().x || diff.y > AABB[b].getSize().y ||
 		-diff.x > AABB[a].getSize().x || -diff.y > AABB[a].getSize().y){
 		return false;
-	}
-
-	shapes[a].setFillColor(Color::Green);
-	shapes[b].setFillColor(Color::Green);
-	return true;
+}
+	//else it turns shapes green and returns true
+shapes[a].setFillColor(Color::Green);
+shapes[b].setFillColor(Color::Green);
+return true;
 }
 
-///////////////////////////////////////////////////////////////
-// EVERYTHING INSIDE THIS SHIT IS VOLATILE
-///////////////////////////////////////////////////////////////
-
-Vector2f getPerpendicular(Vector2f f){
+/* SAT COLLISION */
+Vector2f getPerpNormal(Vector2f corner1, Vector2f corner2){
+	Vector2f temp = corner1 - corner2;
 	Vector2f perp;
-	perp.x = f.y;
-	perp.y = -f.x;
+	perp.x = temp.y;
+	perp.y = -temp.x;
 	return perp;
 }
 
-Vector2f normalize(Vector2f n){
-	Vector2f normalizedVector;
-	float x = sqrt((n.x * n.x) + (n.y * n.y));
-	normalizedVector.x = n.x / x;
-	normalizedVector.y = n.y / x;
-	return normalizedVector;
+float dotProduct(Vector2f v, Vector2f u){
+	return ((v.x * v.x) + (v.y * v.y));
 }
 
-Vector2f projection(Vector2f v, Vector2f u){
-	float dot = (v.x * v.x) + (v.y * v.y);
-	return (u * dot);
-}
-
-//0 = min, 1 = max
-vector<Vector2f> getEndsOfLineSegment(vector<Vector2f> points, Vector2f perp){
-	vector<Vector2f> ends;
-	ends.resize(2);
-	
+float getMinLS(vector<Vector2f> points, Vector2f perp){
+	float min;
 	for (int i = 0; i < points.size(); i++){
-		if (i != 0){
-			Vector2f p = projection(points[i], perp);
-			ends[0].x = min(ends[0].x, p.x);
-			ends[0].y = min(ends[0].y, p.y);
-			ends[1].x = max(ends[1].x, p.x);
-			ends[1].y = max(ends[1].y, p.y);
-		}
-		else {
-			ends[0] = projection(points[i], perp);
-			ends[1] = projection(points[i], perp);
-		}
+		float p = dotProduct(points[i], perp);
+		if (i != 0) min = min(min, p);
+		else min = p;
 	}
-	return ends;
+	return min;
 }
 
-vector<Vector2f> getPerpendicularNormal(vector<Vector2f> corners1, vector<Vector2f> corners2){
-	vector<Vector2f> axes;
-	axes.resize(corners1.size() + corners2.size());
-
-	for (int i = 0; i < corners1.size(); i++){
-		Vector2f axis;
-		if (i+1 != corners1.size()) axis = corners1[i] - corners1[i+1];
-		else axis = corners1[i] - corners1[0];
-		axis = getPerpendicular(axis);
-		axes.push_back(normalize(axis));
+float getMaxLS(vector<Vector2f> points, Vector2f perp){
+	float max;
+	for (int i = 0; i < points.size(); i++){
+		float p = dotProduct(points[i], perp);
+		if (i != 0) maxmin = maxx(min, p);
+		else max = p;
 	}
-
-	for (int i = 0; i < corners2.size(); i++){
-		Vector2f axis;
-		if (i+1 != corners2.size()) axis = corners2[i] - corners2[i+1];
-		else axis = corners2[i] - corners2[0];
-		axis = getPerpendicular(axis);
-		axes.push_back(normalize(axis));
-	}
-	return axes;
+	return max;
 }
 
 vector<Vector2f> getCorners(int index){
@@ -133,31 +100,56 @@ void checkSATCollision(){
 		for (int j = 0; j < objects; j++){
 			if (i != j){
 				if (isAABBColliding(i, j)){
-					vector<Vector2f> perpNorm = getPerpendicularNormal(getCorners(i), getCorners(j));
-					for (int k = 0; k < perpNorm.size(); k++){
-						vector<Vector2f> ends1 = getEndsOfLineSegment(getCorners(i), perpNorm[k]);
-						vector<Vector2f> ends2 = getEndsOfLineSegment(getCorners(j), perpNorm[k]);			
-						//ends1[0] = min of shape1
-						//ends1[1] = max of shape1
-						if (ends2[0].x > ends1[1].x || ends2[0].y > ends1[1].y
-							|| ends2[1].x > ends1[0].x || ends2[1].y > ends1[0].y){
-							continue;
-						}
-						else {
-							shapes[i].setFillColor(Color::Red);
-							shapes[j].setFillColor(Color::Red);
+					/* SAT Collision */
+					vector<Vector2f> corners1 = getCorners(i);
+					vector<Vector2f> corners2 = getCorners(j);
+					bool isColliding = true;
+
+					for (int k = 0; k < corners1.size(); k++){
+						Vector2f perpNorm;
+						float min1, max1, min2, max2;
+						//get normal
+						if (i != 0) perpNorm = getPerpNorm(corners1[k], corners1[k+1]);
+						else perpNorm = getPerpNorm(corners1[k], corners1[0]);
+						//solve for the line segments
+						min1 = getMinLS(corners1, perpNorm);
+						max1 = getMaxLS(corners1, perpNorm);
+						min2 = getMinLS(corners2, perpNorm);
+						max2 = getMaxLS(corners2, perpNorm);
+						if (min2 > max1 || max2 > min1){
+							isColliding = false;
 							break;
 						}
 					}
+
+					if (!isColliding){
+						for (int k = 0; k < corners2.size(); k++){
+							Vector2f perpNorm;
+							float min1, max1, min2, max2;
+							//get normal
+							if (i != 0) perpNorm = getPerpNorm(corners2[k], corners2[k+1]);
+							else perpNorm = getPerpNorm(corners2[k], corners2[0]);
+							//solve for the line segments
+							min1 = getMinLS(corners1, perpNorm);
+							max1 = getMaxLS(corners1, perpNorm);
+							min2 = getMinLS(corners2, perpNorm);
+							max2 = getMaxLS(corners2, perpNorm);
+							if (min2 > max1 || max2 > min1){
+								isColliding = false;
+								break;
+							}
+						}
+					}
+					else {
+						shapes[i].setFillColor(Color::Red);
+						shapes[j].setFillColor(Color::Red);
+					}
+					/* SAT Collision */
 				}
 			}
 		}
 	}
 }
-
-///////////////////////////////////////////////////////////////
-// EVERYTHING INSIDE THIS SHIT IS VOLATILE
-///////////////////////////////////////////////////////////////
 
 Vector2f getCentroid(vector<Vector2f> p){
 	Vector2f centroid;
