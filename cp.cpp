@@ -47,11 +47,11 @@ bool isAABBColliding(int a, int b){
 	if (diff.x > AABB[b].getSize().x || diff.y > AABB[b].getSize().y ||
 		-diff.x > AABB[a].getSize().x || -diff.y > AABB[a].getSize().y){
 		return false;
-}
+	}
 	//else it turns shapes green and returns true
-shapes[a].setFillColor(Color::Green);
-shapes[b].setFillColor(Color::Green);
-return true;
+	shapes[a].setFillColor(Color::Yellow);
+	shapes[b].setFillColor(Color::Yellow);
+	return true;
 }
 
 /* SAT COLLISION */
@@ -64,35 +64,36 @@ Vector2f getPerpNormal(Vector2f corner1, Vector2f corner2){
 }
 
 float dotProduct(Vector2f v, Vector2f u){
-	return ((v.x * v.x) + (v.y * v.y));
+	return ((v.x * u.x) + (v.y * u.y));
 }
 
 float getMinLS(vector<Vector2f> points, Vector2f perp){
-	float min;
+	float mini;
 	for (int i = 0; i < points.size(); i++){
 		float p = dotProduct(points[i], perp);
-		if (i != 0) min = min(min, p);
-		else min = p;
+		if (i != 0) mini = min(mini, p);
+		else mini = p;
 	}
-	return min;
+	return mini;
 }
 
 float getMaxLS(vector<Vector2f> points, Vector2f perp){
-	float max;
+	float maxi;
 	for (int i = 0; i < points.size(); i++){
 		float p = dotProduct(points[i], perp);
-		if (i != 0) maxmin = maxx(min, p);
-		else max = p;
+		if (i != 0) maxi = max(maxi, p);
+		else maxi = p;
 	}
-	return max;
+	return maxi;
 }
 
 vector<Vector2f> getCorners(int index){
 	vector<Vector2f> corners;
 	corners.resize(shapes[index].getPointCount());
-	for (int i = 0; i < corners.size(); i++){
+	for (int i = 0; i < shapes[index].getPointCount(); i++){
 		corners.push_back(shapes[index].getTransform().transformPoint(shapes[index].getPoint(i)));
 	}
+	return corners;
 }
 
 void checkSATCollision(){
@@ -101,51 +102,61 @@ void checkSATCollision(){
 			if (i != j){
 				if (isAABBColliding(i, j)){
 					/* SAT Collision */
+					bool isStillColliding = true;
+
 					vector<Vector2f> corners1 = getCorners(i);
 					vector<Vector2f> corners2 = getCorners(j);
-					bool isColliding = true;
 
+					//check using perpendicular normals of first shape
 					for (int k = 0; k < corners1.size(); k++){
 						Vector2f perpNorm;
 						float min1, max1, min2, max2;
+
 						//get normal
-						if (i != 0) perpNorm = getPerpNorm(corners1[k], corners1[k+1]);
-						else perpNorm = getPerpNorm(corners1[k], corners1[0]);
+						if (i != 0) perpNorm = getPerpNormal(corners1[k], corners1[k+1]);
+						else perpNorm = getPerpNormal(corners1[k], corners1[0]);
+
 						//solve for the line segments
 						min1 = getMinLS(corners1, perpNorm);
 						max1 = getMaxLS(corners1, perpNorm);
 						min2 = getMinLS(corners2, perpNorm);
 						max2 = getMaxLS(corners2, perpNorm);
-						if (min2 > max1 || max2 > min1){
-							isColliding = false;
+
+						//check if still colliding
+						if (min2 > max1 || max2 > min1) {
+							cout << "not colliding!" << endl;
+							isStillColliding = false;
 							break;
 						}
 					}
 
-					if (!isColliding){
+					//check using perpendicular normals of second shape
+					if (isStillColliding){
 						for (int k = 0; k < corners2.size(); k++){
 							Vector2f perpNorm;
 							float min1, max1, min2, max2;
 							//get normal
-							if (i != 0) perpNorm = getPerpNorm(corners2[k], corners2[k+1]);
-							else perpNorm = getPerpNorm(corners2[k], corners2[0]);
+							if (i != 0) perpNorm = getPerpNormal(corners2[k], corners2[k+1]);
+							else perpNorm = getPerpNormal(corners2[k], corners2[0]);
 							//solve for the line segments
 							min1 = getMinLS(corners1, perpNorm);
 							max1 = getMaxLS(corners1, perpNorm);
 							min2 = getMinLS(corners2, perpNorm);
 							max2 = getMaxLS(corners2, perpNorm);
-							if (min2 > max1 || max2 > min1){
-								isColliding = false;
+							//check if still colliding
+							if (min2 > max1 || max2 > min1) {
+								isStillColliding = false;
 								break;
 							}
 						}
 					}
-					else {
+
+					if (isStillColliding) {
 						shapes[i].setFillColor(Color::Red);
 						shapes[j].setFillColor(Color::Red);
-					}
-					/* SAT Collision */
+					} 
 				}
+
 			}
 		}
 	}
@@ -305,6 +316,7 @@ int main(){
 			}
 		}
 
+		
 		moveAll();
 		if (rotateOn) rotateShapes();
 		drawAABBs();
@@ -313,7 +325,7 @@ int main(){
 		
 		window.clear(Color::Black);
 		for(const auto& shape : shapes) { window.draw(shape); }
-		for(const auto& aabb : AABB) { window.draw(aabb); }
-		window.display();
+			for(const auto& aabb : AABB) { window.draw(aabb); }
+				window.display();
+		}
 	}
-}
