@@ -9,6 +9,7 @@
 #define WINDOW_H 600
 #define SHIP_SIZE 20.0f
 #define SPEED 175 * TIMESTEP
+#define BULLET_SPEED SPEED / 2
 #define BRICKS 3000
 #define ROW_OF_BRICKS 30
 #define BRICKS_IN_ROW 100
@@ -16,6 +17,10 @@
 #define BULLETS 2000
 #define BULLETS_SIZE 4.0f
 #define PI M_PI / 180
+#define GRIDS 300
+#define ROW_OF_GRIDS 15
+#define GRIDS_IN_ROW 20
+#define GRIDS_SIZE 40.0f
 
 using namespace std;
 using namespace sf;
@@ -24,6 +29,8 @@ RenderWindow window;
 RectangleShape spaceship;
 bool u, d, l, r, threeBullets, isShooting;
 list<RectangleShape*> bricks, bulletsPooled, bulletsShot;
+list<FloatRect*> gridGuides;
+list<list<RectangleShape*>*> grid;
 
 /* 
 main idea is to get that pointer, pop (delete) it 
@@ -76,7 +83,7 @@ void moveAll(){
 	if(!bulletsShot.empty()){
 		for(list<RectangleShape*>::iterator b = bulletsShot.begin(); b != bulletsShot.end(); ++b){
 			float ang = (*b)->getRotation() * PI;
-			(*b)->move(-SPEED * sin(ang), -SPEED * cos(ang));
+			(*b)->move(-BULLET_SPEED * sin(ang), -BULLET_SPEED * cos(ang));
 		}
 	}
 }
@@ -85,31 +92,9 @@ bool isInsideWindow(RectangleShape r){
 	if (r.getPosition().x <= -2 || r.getPosition().x >= WINDOW_W + 2 ||
 		r.getPosition().y <= -2 || r.getPosition().y >= WINDOW_H + 2){
 		return false;
-}
-return true;
-}
-
-/*
-void refreshBullets(){
-	if (!bulletsShot.empty()){
-		bool removePreviousBullet = false;
-		for(list<RectangleShape*>::iterator b = bulletsShot.begin(); b != bulletsShot.end(); ++b){
-			//check if previous dele
-			if (removePreviousBullet){
-				bulletsShot.erase(b--);
-				makeNewBullet();
-				removePreviousBullet = false;
-			}
-			if (!isInsideWindow(**b)) removePreviousBullet = true;
-		}
-		if (removePreviousBullet) {
-			bulletsShot.pop_back();
-			makeNewBullet();
-			removePreviousBullet = false;
-		}
 	}
+	return true;
 }
-*/
 
 void makeNewBullet(){
 	RectangleShape* p = new RectangleShape();
@@ -123,23 +108,31 @@ void makeNewBullet(){
 }
 
 /*
-used to refresh the pooled and shot bullets.
-will revise after i implement the grid system.
+.erase() returns the pointer to the next element in the list
+if you just delete to whatever ur pointing, pwede maging invalid
+yung iterator. fucking took me a while to solve lmao
 */
-void refreshBullets(){
+void updateBullets(){
+	bool removePreviousBullet = false;
 	if (!bulletsShot.empty()){
-		for(list<RectangleShape*>::iterator b = bulletsShot.begin(); b != bulletsShot.end(); ++b){
-			if (!isInsideWindow(**b)) {
-				bulletsShot.erase(b);
+		for(list<RectangleShape*>::iterator b = bulletsShot.begin(); b != bulletsShot.end();){
+			if (!isInsideWindow(**b)){
+				b = bulletsShot.erase(b);
 				makeNewBullet();
+			}
+			else {
+				++b;
 			}
 		}
 	}
 }
 
+void updateGrid(){
+
+}
+
 void checkCollision(){
-	//per grid, then pairwise na lang
-	//do u guys
+	
 }
 
 void initializeObjects(){
@@ -166,10 +159,24 @@ void initializeObjects(){
 			bricks.push_back(p);
 		}
 	}
-
 	//make all bullets
-	for (int i = 0; i < BULLETS; i++){
-		makeNewBullet();
+	for (int i = 0; i < BULLETS; i++) { 
+		makeNewBullet(); 
+	}
+
+	//make grid
+	Vector2f size = Vector2f(GRIDS_SIZE, GRIDS_SIZE);
+	for (int i = 0; i < ROW_OF_GRIDS; i++){
+		for (int j = 0; j < GRIDS_IN_ROW; j++){
+			//add a list to list of lists xdxdxd
+			list<RectangleShape*>* g = new list<RectangleShape*>();
+			grid.push_back(g);
+
+			//make grid guides
+			Vector2f pos = Vector2f(GRIDS_SIZE * j, GRIDS_SIZE * i);
+			FloatRect* r = new FloatRect(pos, size);
+			gridGuides.push_back(r);
+		}
 	}
 }
 
@@ -246,12 +253,15 @@ int main(){
 		}
 
 		moveAll();
-		refreshBullets();
+		updateBullets();
+		//updateGrid();
+		//checkCollisionPerGrid();
 		window.clear(Color::Black);
 		window.draw(spaceship);
 		for(list<RectangleShape*>::iterator it = bulletsShot.begin(); it != bulletsShot.end(); ++it){ window.draw(**it); }
 		for(list<RectangleShape*>::iterator it = bricks.begin(); it != bricks.end(); ++it){ window.draw(**it); }
 		cout << bulletsShot.size() << " " << bulletsPooled.size() << endl; //tester
+		//cout << grid.size() << endl;
 		window.display();
 	}
-}	
+}
