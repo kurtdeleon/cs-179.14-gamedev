@@ -29,8 +29,8 @@ RenderWindow window;
 RectangleShape spaceship;
 bool u, d, l, r, threeBullets, isShooting;
 list<RectangleShape*> bricks, bulletsPooled, bulletsShot;
-list<FloatRect*> gridGuides;
-list<list<RectangleShape*>*> grid;
+FloatRect gridGuides[GRIDS];
+list<list<RectangleShape*>*> brickGrid, bulletGrid;
 
 /* 
 main idea is to get that pointer, pop (delete) it 
@@ -127,12 +127,21 @@ void updateBullets(){
 	}
 }
 
-void updateGrid(){
-
+void initializeGrids(){
+	int counter = 0;
+	for(list<list<RectangleShape*>*>::iterator g = brickGrid.begin(); g != brickGrid.end(); ++g){
+		for(list<RectangleShape*>::iterator b = bricks.begin(); b != bricks.end(); ++b){
+			if (gridGuides[counter].intersects((**b).getGlobalBounds())) {
+				(**g).push_back(*b);
+			}
+		}
+		counter++;
+	}
 }
 
 void checkCollision(){
-	
+	//per grid, go through all elements inside it and check for pairwise collisions
+	//delete all traces of the brick, and then pool that bullet
 }
 
 void initializeObjects(){
@@ -159,25 +168,30 @@ void initializeObjects(){
 			bricks.push_back(p);
 		}
 	}
+
+	//make grid
+	Vector2f size = Vector2f(GRIDS_SIZE, GRIDS_SIZE);
+	int counter = 0;
+	for (int i = 0; i < ROW_OF_GRIDS; i++){
+		for (int j = 0; j < GRIDS_IN_ROW; j++){
+			//add a list to list of lists xdxdxd
+			list<RectangleShape*>* g = new list<RectangleShape*>();
+			brickGrid.push_back(g);
+			bulletGrid.push_back(g);
+
+			//make grid guides
+			Vector2f pos = Vector2f(GRIDS_SIZE * j, GRIDS_SIZE * i);
+			gridGuides[counter] = FloatRect(pos, size);
+			counter++; 
+		}
+	}
+
 	//make all bullets
 	for (int i = 0; i < BULLETS; i++) { 
 		makeNewBullet(); 
 	}
 
-	//make grid
-	Vector2f size = Vector2f(GRIDS_SIZE, GRIDS_SIZE);
-	for (int i = 0; i < ROW_OF_GRIDS; i++){
-		for (int j = 0; j < GRIDS_IN_ROW; j++){
-			//add a list to list of lists xdxdxd
-			list<RectangleShape*>* g = new list<RectangleShape*>();
-			grid.push_back(g);
-
-			//make grid guides
-			Vector2f pos = Vector2f(GRIDS_SIZE * j, GRIDS_SIZE * i);
-			FloatRect* r = new FloatRect(pos, size);
-			gridGuides.push_back(r);
-		}
-	}
+	initializeGrids();
 }
 
 int main(){
@@ -254,13 +268,12 @@ int main(){
 
 		moveAll();
 		updateBullets();
-		//updateGrid();
 		//checkCollisionPerGrid();
 		window.clear(Color::Black);
 		window.draw(spaceship);
 		for(list<RectangleShape*>::iterator it = bulletsShot.begin(); it != bulletsShot.end(); ++it){ window.draw(**it); }
 		for(list<RectangleShape*>::iterator it = bricks.begin(); it != bricks.end(); ++it){ window.draw(**it); }
-		cout << bulletsShot.size() << " " << bulletsPooled.size() << endl; //tester
+		//cout << bulletsShot.size() << " " << bulletsPooled.size() << endl; //tester
 		//cout << grid.size() << endl;
 		window.display();
 	}
