@@ -2,6 +2,7 @@
 #include <iostream>
 #include <list>
 #include <math.h>
+#include <vector>
 
 #define FPS 60
 #define TIMESTEP 1.0f / FPS
@@ -30,7 +31,7 @@ RectangleShape spaceship;
 bool u, d, l, r, threeBullets, isShooting;
 list<RectangleShape*> bricks, bulletsPooled, bulletsShot;
 FloatRect gridGuides[GRIDS];
-list<list<RectangleShape*>*> brickGrid, bulletGrid;
+list<vector<vector<RectangleShape*>>> grid;
 
 /* 
 main idea is to get that pointer, pop (delete) it 
@@ -113,7 +114,6 @@ if you just delete to whatever ur pointing, pwede maging invalid
 yung iterator. fucking took me a while to solve lmao
 */
 void updateBullets(){
-	bool removePreviousBullet = false;
 	if (!bulletsShot.empty()){
 		for(list<RectangleShape*>::iterator b = bulletsShot.begin(); b != bulletsShot.end();){
 			if (!isInsideWindow(**b)){
@@ -125,21 +125,41 @@ void updateBullets(){
 			}
 		}
 	}
-}
 
-void initializeGrids(){
 	int counter = 0;
-	for(list<list<RectangleShape*>*>::iterator g = brickGrid.begin(); g != brickGrid.end(); ++g){
-		for(list<RectangleShape*>::iterator b = bricks.begin(); b != bricks.end(); ++b){
+	for(list<vector<vector<RectangleShape*>>>::iterator g = grid.begin(); g != grid.end(); ++g){
+		(*g)[1].clear(); // HAHA IM FUCKING RETARDED
+		for(list<RectangleShape*>::iterator b = bulletsShot.begin(); b != bulletsShot.end(); ++b){
 			if (gridGuides[counter].intersects((**b).getGlobalBounds())) {
-				(**g).push_back(*b);
+				(*g)[1].push_back(*b);
 			}
 		}
 		counter++;
 	}
 }
 
-void checkCollision(){
+
+void initializeGrids(){
+	int counter = 0;
+	for(list<vector<vector<RectangleShape*>>>::iterator g = grid.begin(); g != grid.end(); ++g){
+		for(list<RectangleShape*>::iterator b = bricks.begin(); b != bricks.end(); ++b){
+			if (gridGuides[counter].intersects((**b).getGlobalBounds())) {
+				(*g)[0].push_back(*b);
+			}
+		}
+		counter++;
+	}
+
+	/* tester
+	counter = 0;
+	for(list<vector<vector<RectangleShape*>>>::iterator g = grid.begin(); g != grid.end(); ++g){
+		cout << counter << ": " << (*g)[0].size() << endl;
+		counter++;
+	}
+	*/
+}
+
+void checkCollisionPerGrid(){
 	//per grid, go through all elements inside it and check for pairwise collisions
 	//delete all traces of the brick, and then pool that bullet
 }
@@ -174,10 +194,11 @@ void initializeObjects(){
 	int counter = 0;
 	for (int i = 0; i < ROW_OF_GRIDS; i++){
 		for (int j = 0; j < GRIDS_IN_ROW; j++){
-			//add a list to list of lists xdxdxd
-			list<RectangleShape*>* g = new list<RectangleShape*>();
-			brickGrid.push_back(g);
-			bulletGrid.push_back(g);
+			vector<vector<RectangleShape*>> mainVec;
+			vector<RectangleShape*> v1, v2;
+			mainVec.push_back(v1);
+			mainVec.push_back(v2);
+			grid.push_back(mainVec);
 
 			//make grid guides
 			Vector2f pos = Vector2f(GRIDS_SIZE * j, GRIDS_SIZE * i);
@@ -274,6 +295,7 @@ int main(){
 		for(list<RectangleShape*>::iterator it = bulletsShot.begin(); it != bulletsShot.end(); ++it){ window.draw(**it); }
 		for(list<RectangleShape*>::iterator it = bricks.begin(); it != bricks.end(); ++it){ window.draw(**it); }
 		//cout << bulletsShot.size() << " " << bulletsPooled.size() << endl; //tester
+		//cout << grid.size() << endl;
 		//cout << grid.size() << endl;
 		window.display();
 	}
