@@ -3,10 +3,10 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define FPS 144
-#define TIMESTEP 1.0f / 144.0f
+#define FPS 60
+#define TIMESTEP 1.0f / 60.0f
 #define FORCE 10000.0f
-#define MAIN_MASS 10.0f
+#define MAIN_MASS 50.0f
 #define OTHER_MASS 1.0f
 #define WIDTH 800
 #define HEIGHT 600
@@ -42,12 +42,24 @@ int main(int argc, char *argv[]){
 	cArray[0].setFillColor(Color::Magenta);
 	cMass[0] = MAIN_MASS;
 	for(int i = 1; i < x; i++){
-		if(i < 6) cArray[i].setPosition((i * 110) + 120, 75);	
-		if(i >= 6 && i < 12) cArray[i].setPosition((i % 6) * 110 + 120, 165);		
-		if(i >= 12 && i < 18) cArray[i].setPosition((i % 6) * 110 + 120, 255);		
-		if(i >= 18 && i < 24) cArray[i].setPosition((i % 6) * 110 + 120, 345);		
-		if(i >= 24 && i < 30) cArray[i].setPosition((i % 6) * 110 + 120, 435);		
-		if(i >= 30 && i < 36) cArray[i].setPosition((i % 6) * 110 + 120, 525);
+		if(i < 6){
+			cArray[i].setPosition((i * 110) + 120, 75);
+		}	
+		if(i >= 6 && i < 12){
+			cArray[i].setPosition((i % 6) * 110 + 120, 165);
+		}
+		if(i >= 12 && i < 18){
+			cArray[i].setPosition((i % 6) * 110 + 120, 255);
+		}
+		if(i >= 18 && i < 24){
+			cArray[i].setPosition((i % 6) * 110 + 120, 345);
+		}
+		if(i >= 24 && i < 30){
+			cArray[i].setPosition((i % 6) * 110 + 120, 435);
+		}
+		if(i >= 30 && i < 36){
+			cArray[i].setPosition((i % 6) * 110 + 120, 525);
+		}
 		cArray[i].setRadius(RADIUS);
 		cArray[i].setOrigin(RADIUS, RADIUS);
 		cArray[i].setFillColor(colorArray[rand() % 3]);
@@ -105,9 +117,9 @@ int main(int argc, char *argv[]){
 		//move the circles
 		for(int i = 0; i < x; i++){
 			Vector2f thisPos = cArray[i].getPosition();
-			thisPos = thisPos + (0.5f * cAccel[i] * TIMESTEP * TIMESTEP) + (cVel[i] * TIMESTEP);
 			cVel[i] = cVel[i] + (cAccel[i] * TIMESTEP);
 			if(withFriction) cVel[i] = cVel[i] - (FRICTION * cVel[i] / cMass[i]);
+			thisPos = thisPos + (0.5f * cAccel[i] * TIMESTEP * TIMESTEP) + (cVel[i] * TIMESTEP);
 			cArray[i].setPosition(thisPos);
 		}
 		//border check
@@ -143,6 +155,7 @@ int main(int argc, char *argv[]){
 						Vector2f norm_vector = aPos - bPos;
 						Vector2f rvel_vector = cVel[i] - cVel[j];
 						float rel_norm_vel = (norm_vector.x * rvel_vector.x) + (norm_vector.y * rvel_vector.y);
+						//cout << norm_vector.x << " " << norm_vector.y << "\n" << rvel_vector.x << " " << rvel_vector.y << "\n" << rel_norm_vel << endl;
 						if(rel_norm_vel < 0){
 							impulse = -((1.0f + ELASTICITY) * (rel_norm_vel) / (distancePos * ((1.0f / cMass[i]) + 1.0f / cMass[j])));
 							cVel[i] = cVel[i] + ((impulse / cMass[i]) * norm_vector);
