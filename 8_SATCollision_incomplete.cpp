@@ -5,7 +5,7 @@
 
 #define FPS 60
 #define TIMESTEP 1.0f / FPS
-#define SPEED 100 * TIMESTEP
+#define SPEED 200 * TIMESTEP
 #define WINDOW_W 800
 #define WINDOW_H 600
 
@@ -48,18 +48,13 @@ bool isAABBColliding(int a, int b){
 		-diff.x > AABB[a].getSize().x || -diff.y > AABB[a].getSize().y){
 		return false;
 	}
-	//else it turns shapes green and returns true
-	shapes[a].setFillColor(Color::Yellow);
-	shapes[b].setFillColor(Color::Yellow);
 	return true;
 }
 
 /* SAT COLLISION */
 Vector2f getPerpNormal(Vector2f corner1, Vector2f corner2){
 	Vector2f temp = corner1 - corner2;
-	Vector2f perp;
-	perp.x = temp.y;
-	perp.y = -temp.x;
+	Vector2f perp = Vector2f(-temp.y, temp.x);
 	return perp;
 }
 
@@ -103,28 +98,22 @@ void checkSATCollision(){
 				if (isAABBColliding(i, j)){
 					/* SAT Collision */
 					bool isStillColliding = true;
-
 					vector<Vector2f> corners1 = getCorners(i);
 					vector<Vector2f> corners2 = getCorners(j);
 
 					//check using perpendicular normals of first shape
 					for (int k = 0; k < corners1.size(); k++){
 						Vector2f perpNorm;
-						float min1, max1, min2, max2;
-
 						//get normal
 						if (i != 0) perpNorm = getPerpNormal(corners1[k], corners1[k+1]);
 						else perpNorm = getPerpNormal(corners1[k], corners1[0]);
-
 						//solve for the line segments
-						min1 = getMinLS(corners1, perpNorm);
-						max1 = getMaxLS(corners1, perpNorm);
-						min2 = getMinLS(corners2, perpNorm);
-						max2 = getMaxLS(corners2, perpNorm);
-
+						float min1 = getMinLS(corners1, perpNorm);
+						float max1 = getMaxLS(corners1, perpNorm);
+						float min2 = getMinLS(corners2, perpNorm);
+						float max2 = getMaxLS(corners2, perpNorm);
 						//check if still colliding
-						if (min2 > max1 || max2 > min1) {
-							cout << "not colliding!" << endl;
+						if (min2 > max1 || min1 > max2) {
 							isStillColliding = false;
 							break;
 						}
@@ -134,17 +123,16 @@ void checkSATCollision(){
 					if (isStillColliding){
 						for (int k = 0; k < corners2.size(); k++){
 							Vector2f perpNorm;
-							float min1, max1, min2, max2;
 							//get normal
 							if (i != 0) perpNorm = getPerpNormal(corners2[k], corners2[k+1]);
 							else perpNorm = getPerpNormal(corners2[k], corners2[0]);
 							//solve for the line segments
-							min1 = getMinLS(corners1, perpNorm);
-							max1 = getMaxLS(corners1, perpNorm);
-							min2 = getMinLS(corners2, perpNorm);
-							max2 = getMaxLS(corners2, perpNorm);
+							float min1 = getMinLS(corners1, perpNorm);
+							float max1 = getMaxLS(corners1, perpNorm);
+							float min2 = getMinLS(corners2, perpNorm);
+							float max2 = getMaxLS(corners2, perpNorm);
 							//check if still colliding
-							if (min2 > max1 || max2 > min1) {
+							if (min2 > max1 || min1 > max2) {
 								isStillColliding = false;
 								break;
 							}
@@ -155,8 +143,11 @@ void checkSATCollision(){
 						shapes[i].setFillColor(Color::Red);
 						shapes[j].setFillColor(Color::Red);
 					} 
+					else {
+						shapes[i].setFillColor(Color::Yellow);
+						shapes[j].setFillColor(Color::Yellow);
+					}
 				}
-
 			}
 		}
 	}
@@ -315,7 +306,6 @@ int main(){
 				break;
 			}
 		}
-
 		
 		moveAll();
 		if (rotateOn) rotateShapes();
@@ -325,7 +315,7 @@ int main(){
 		
 		window.clear(Color::Black);
 		for(const auto& shape : shapes) { window.draw(shape); }
-			for(const auto& aabb : AABB) { window.draw(aabb); }
-				window.display();
-		}
+		for(const auto& aabb : AABB) { window.draw(aabb); }
+		window.display();
 	}
+}

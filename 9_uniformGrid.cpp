@@ -97,14 +97,11 @@ bool isInsideWindow(RectangleShape r){
 	return true;
 }
 
-void makeNewBullet(){
-	RectangleShape* p = new RectangleShape();
-
+void relocateBullet(RectangleShape* p){
 	p->setSize(Vector2f(BULLETS_SIZE, BULLETS_SIZE));
-	p->setFillColor(Color::Magenta);
+	p->setFillColor(Color::White);
 	p->setOrigin(BULLETS_SIZE/2, BULLETS_SIZE/2);
 	p->setPosition(900, 900);
-
 	bulletsPooled.push_back(p);
 }
 
@@ -116,9 +113,9 @@ yung iterator. fucking took me a while to solve lmao
 void updateBullets(){
 	if (!bulletsShot.empty()){
 		for(list<RectangleShape*>::iterator b = bulletsShot.begin(); b != bulletsShot.end();){
-			if (!isInsideWindow(**b)){
+			if (!isInsideWindow(**b)) {
+				relocateBullet(*b);
 				b = bulletsShot.erase(b);
-				makeNewBullet();
 			}
 			else {
 				++b;
@@ -138,7 +135,6 @@ void updateBullets(){
 	}
 }
 
-
 void initializeGrids(){
 	int counter = 0;
 	for(list<vector<vector<RectangleShape*>>>::iterator g = grid.begin(); g != grid.end(); ++g){
@@ -150,25 +146,40 @@ void initializeGrids(){
 		counter++;
 	}
 
-	/* tester
-	counter = 0;
+	/*counter = 0;
 	for(list<vector<vector<RectangleShape*>>>::iterator g = grid.begin(); g != grid.end(); ++g){
 		cout << counter << ": " << (*g)[0].size() << endl;
 		counter++;
-	}
-	*/
+	}*/
+	
 }
 
+void cleanUp(){
+	bricks.remove(NULL);
+	bulletsShot.remove(NULL);
+}
+
+
 void checkCollisionPerGrid(){
-	//per grid, go through all elements inside it and check for pairwise collisions
-	//delete all traces of the brick, and then pool that bullet
+	bool hasIncremented;
+	for(list<vector<vector<RectangleShape*>>>::iterator g = grid.begin(); g != grid.end(); ++g){
+		if (!(*g)[0].empty() && !(*g)[1].empty()){
+			for(vector<RectangleShape*>::iterator br = (*g)[0].begin(); br != (*g)[0].end(); ++br){
+				for(vector<RectangleShape*>::iterator bu = (*g)[1].begin(); bu != (*g)[1].end(); ++bu){
+					if ((**br).getGlobalBounds().intersects((**bu).getGlobalBounds())){
+						(*br)->setPosition(900, 900);
+					}
+				}
+			}
+		}
+	}
 }
 
 void initializeObjects(){
 	threeBullets = false;
 	isShooting = false;
 	spaceship.setSize(sf::Vector2f(SHIP_SIZE, SHIP_SIZE));
-	spaceship.setFillColor(Color::Magenta);
+	spaceship.setFillColor(Color::White);
 	spaceship.setOrigin(SHIP_SIZE/2, SHIP_SIZE/2);
 	spaceship.setPosition(WINDOW_H*2/3, WINDOW_W/2);
 
@@ -179,9 +190,9 @@ void initializeObjects(){
 
 			p->setSize(Vector2f(BRICKS_SIZE, BRICKS_SIZE));
 			p->setOrigin(BRICKS_SIZE/2, BRICKS_SIZE/2);
-			p->setFillColor(Color::White);
-			p->setOutlineThickness(1.0);
-			p->setOutlineColor(Color::Black);
+			p->setFillColor(Color::Magenta);
+			//p->setOutlineThickness(1.0);
+			//p->setOutlineColor(Color::Black);
 			p->setPosition(BRICKS_SIZE/2 + (j * BRICKS_SIZE),
 				BRICKS_SIZE/2 + (i * BRICKS_SIZE));
 
@@ -209,7 +220,8 @@ void initializeObjects(){
 
 	//make all bullets
 	for (int i = 0; i < BULLETS; i++) { 
-		makeNewBullet(); 
+		RectangleShape* r = new RectangleShape();
+		relocateBullet(r);
 	}
 
 	initializeGrids();
@@ -289,13 +301,13 @@ int main(){
 
 		moveAll();
 		updateBullets();
-		//checkCollisionPerGrid();
+		checkCollisionPerGrid();
+		//cleanUp();
 		window.clear(Color::Black);
 		window.draw(spaceship);
 		for(list<RectangleShape*>::iterator it = bulletsShot.begin(); it != bulletsShot.end(); ++it){ window.draw(**it); }
 		for(list<RectangleShape*>::iterator it = bricks.begin(); it != bricks.end(); ++it){ window.draw(**it); }
 		//cout << bulletsShot.size() << " " << bulletsPooled.size() << endl; //tester
-		//cout << grid.size() << endl;
 		//cout << grid.size() << endl;
 		window.display();
 	}
